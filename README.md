@@ -1,148 +1,174 @@
 # DR Runbook Agent
 
-Use case 22, Backup & Resilience (Advanced). A guided disaster recovery **drill simulator** with two agents.
+> **Simulation only.** No code here can reach real infrastructure. A passing drill does not prove that a real
+> system can be recovered.
 
-> **Simulation only.** No code here can reach real infrastructure. Every check and action result comes from a
-> scenario file. A passing drill does not prove that a real system can be recovered.
+## 1. Team and Use Case
 
-## What it does
+- **Team number:** 31
+- **Team name:** TriResQ
+- **Members:** To be added by the team
+- **Use case number and title:** 22 - DR Runbook Agent (Backup & Resilience, Advanced)
 
-A coordinator picks a scenario. The **Drill Coordinator** checks the runbook is approved and current, shows the
-plan, and walks through 11 steps. The **Failover Operator** runs simulated checks and actions. Every action,
-rollbacks included, needs a human approval. At the end the report is built from saved state and the event log.
+## 2. Problem Statement
 
-| Manual drill problem | What this does | How to check it |
+Disaster recovery drills follow long runbooks while one coordinator also tracks the bridge call, approvals,
+timestamps and decisions by hand. Steps can be missed or run out of order, and approvals are hard to prove
+later. The post-drill report is assembled afterwards and can take days (a figure quoted in our engineering
+guidelines, not measured by us). We built a guided, auditable, simulation-only drill that produces its report on
+demand.
+
+## 3. Solution Overview
+
+The coordinator opens a web page, picks a scenario and reviews the runbook plan with its source citations. After
+confirming and authorizing, they go through 11 steps one at a time. Read-only checks run on request. **Every
+simulated action, including each rollback, waits for Approve or Reject.** Failures lead only to the allowed
+choices: retry, rollback in reverse order, escalate or cancel. A drill can be paused and resumed after a restart.
+The report (RTO, RPO, per-tier timing, deviations, approvals, actions) is calculated from saved records.
+
+**You control the failure:** before any simulated step, choose what goes wrong (for example a replication lag
+value or a DNS timeout). The page shows the rule that decided the result.
+
+## 4. Agentic Design
+
+**Model:** OpenAI `gpt-4.1-mini` (set by `OPENAI_MODEL`). **Framework:** Microsoft Agent Framework, with the
+Foundry Responses host serving `POST /responses`.
+
+| Agent | Role | Tools |
 |---|---|---|
-| Steps missed or run out of order | Dependency-gated state machine, one step at a time | `tests/test_drill.py` |
-| Approvals and timestamps tracked by hand | Signed single-use approvals and a hash-chained event log | Evaluation tab, live audit |
-| Reporting takes days (per the use case) | Report generated on demand in milliseconds | `docs/evidence/EVALUATION.md` |
-| Unclear what to do on failure | Retry, escalate or reverse-order rollback from the runbook | Scenario matrix |
+| Drill Coordinator | Answers questions from approved sources, explains steps | `get_drill_state`, `get_events`, `search_runbook`, `ask_failover_operator` |
+| Failover Operator (connected to the Coordinator) | Runs read-only simulated checks | `check_replication`, `check_health`, and `failover_database`, `repoint_application`, `update_dns`, `rollback_step`, which refuse without a signed approval token |
 
-## You control the failure
+**Orchestration.** The Coordinator agent calls the Operator agent through `ask_failover_operator`. The drill
+itself is controlled by a deterministic state machine, not by a model:
 
-Before any check, action or rollback, open **You control the failure** and choose what the simulator will do:
-type a replication lag and recovery point age, mark storage as faulty, or make DNS time out. The same rules
-decide what happens, for example `lag 45s > 10s limit -> blocked`. A condition applies to one attempt, cannot
-skip an approval, is logged, and is declared in the report. The model has no tool that can set one.
+1. It offers only the commands allowed now.
+2. For a check, it calls the Operator tool and applies the thresholds in code.
+3. For an action, it saves an approval request. On **Approve** it saves the dispatch, creates a signed
+   single-use token bound to the exact action, calls the tool, saves the result and only then advances.
+4. On failure it follows the runbook: retry (at most 3), pause, or reverse-order rollback.
 
-## Where the AI is used
-
-| Feature | What the model does | What code checks |
+| AI feature | What the model does | What code checks |
 |---|---|---|
-| Chat questions (Coordinator agent, with the Operator agent connected) | Answers from approved passages, runs read-only checks | Step IDs, tool names and citations exist |
-| Step briefing | Explains the current step; after a failure, suggests one option | Suggestion must be an allowed command; retry counts are calculated by code |
-| Post-drill analysis | Summary, risks, proposed actions | Each action needs a real owner and real step or deviation IDs |
-| Runbook review (Portal tab) | Turns free-text notes into draft steps | Each step must quote the source; gaps are found by code; the draft cannot run |
+| Chat questions | Answers with citations | Step IDs, tool names and citations exist |
+| Step briefing | Explains the step; may suggest an option | The option must be allowed; retry counts come from code |
+| Post-drill analysis | Summary, risks, actions | Each action has a real owner and real evidence IDs |
+| Runbook review | Drafts steps from rough notes | Each step quotes the source; code finds gaps; draft cannot run |
 
-All of it is advisory. The reference checks confirm that IDs and citations exist. They **do not** confirm that
-a sentence is true. In testing, a briefing once misstated the retry limit and still passed; retry counts are now
-supplied by code.
+All AI output is advisory. The checks confirm references exist; they **do not** confirm a sentence is true.
+Limits: 900 output tokens per reply, 4 tool-loop iterations and 8 tool calls per agent run, 45 s per call,
+60 AI calls per drill. Knowledge search is local SQLite FTS5 (BM25). Diagram: [docs/architecture.md](docs/architecture.md).
 
-## Run it (Windows PowerShell)
+## 5. Prerequisites
 
-```powershell
-py -3.13 -m venv .venv          # or: uv venv --python 3.13 .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt # or: uv pip install -r requirements.txt
-python main.py                  # http://localhost:8088
-```
+- Windows 10 or 11.
+- **Python:** 3.13 recommended. `run.bat` uses it if the `py -3.13` launcher finds it, otherwise `python`.
+- **Node.js:** not required. There are no npm packages.
+- **System packages:** none. SQLite with FTS5 ships with Python.
+- Internet access for the first dependency install, and for AI features.
+- An OpenAI API key for AI features. **Without a key** the drill, approvals, rollback, search and report still work.
 
-No key is needed. The drill, approvals, rollback, search and reports all work without a model.
+## 6. Setup Steps
 
-### Or run it through the Azure Developer CLI
+Run in PowerShell, starting from a fresh unzip.
 
-```powershell
-winget install --id Microsoft.Azd --exact
-azd ai agent run --no-client    # same app on http://localhost:8088
-```
+1. Open the project folder:
+   ```powershell
+   cd Team31_UseCase22
+   ```
+2. Create your settings file:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+3. Add your key (replace `your_key_here` after `OPENAI_API_KEY=`, then save and close):
+   ```powershell
+   notepad .env
+   ```
 
-Tested locally with azd 1.40.0 and the `azure.ai.agents` 1.2.0 extension, using an existing Python 3.13
-`.venv` (create it first: without one, azd built a 3.14 environment). No Azure sign-in, `init`, `provision` or
-`deploy` was needed. Its console also prints telemetry records.
+`run.bat` installs the dependencies, so there is no separate install step.
 
-### Turn on the AI agents
-
-```powershell
-Copy-Item .env.example .env     # then set OPENAI_API_KEY (or the two Azure OpenAI variables)
-python main.py
-```
-
-This turns on the four AI features and the Foundry Responses endpoint at `POST http://localhost:8088/responses`.
-Drill data (masked) and any pasted runbook text are sent to your model provider.
-
-## Test and evaluate
+## 7. How to Run
 
 ```powershell
-python -m pytest -q
-python scripts/evaluate.py        # tests, scenarios, search; writes docs/evidence/
-python scripts/evaluate_model.py  # scores the real model (needs a key, makes about 14 calls)
+.\run.bat
 ```
 
-## What the model can and cannot do
+**URL:** http://localhost:8088 (this computer only). The first start creates `.venv` and installs packages, which
+can take a few minutes. The app is ready when the window shows `DR Runbook Agent (SIMULATION ONLY)`. The page
+header shows `model: gpt-4.1-mini` when a key is set. Stop with Ctrl+C. To use another port:
+`.\run.bat --port 8090`.
 
-| Can | Cannot |
+Optional, if the Azure Developer CLI is installed: `azd ai agent run --no-client` (run `.\run.bat` once first so
+that `.venv` exists). Do not run `azd provision` or `azd deploy`.
+
+## 8. How to Test
+
+### A. Normal flow (about 3 minutes)
+1. Open http://localhost:8088. Scenario: **Nominal success - primary site outage**. Runbook: **DR-FIN-001 v3.2**.
+   Type any name, then **Create drill**.
+2. **Confirm plan**, tick both boxes, **Authorize and start**.
+3. Click the highlighted button at each step. On approval cards click **Approve**. At Business owner acceptance
+   type a name and click **Record sign-off**.
+4. Click **Generate post-drill report**.
+
+**Expected:** `Overall result: Pass`, 11/11 steps, RPO 10m 0s (met), all five tiers met, event log hash chain
+VALID, 0 actions without matching approval.
+
+### B. Failure flow
+1. Start another nominal drill and continue to the **Shift Finance DNS** approval card.
+2. Open **You control the failure**, choose **Times out part-way**, click **Use for the next attempt**, then
+   **Approve**.
+3. For each rollback click **Request rollback approval**, then **Approve**. Generate the report.
+
+**Expected:** rollback order `DR-DNS-08`, `DR-APP-07`, `DR-DB-05`; `Overall result: Fail`; RTO not measured; your
+chosen condition is listed.
+
+### C. Exception flow
+| Input | Expected |
 |---|---|
-| Read drill state and events | Confirm a plan, approve, sign off or advance a step |
-| Search approved documents | Create an approval token |
-| Ask the Operator for read-only checks | Change a tool's parameters (they come from the runbook) |
-| Try an action tool, and be refused and logged | Change the simulated environment without a valid token |
+| New drill with runbook **v2.9** | Refused: `RUNBOOK_NOT_USABLE` (superseded, review stale) |
+| At the replication step, open **You control the failure**, set lag `45`, **Use for the next attempt**, run the check | `lag 45s > 10s limit ... -> blocked` |
+| At an approval card, type `approve` in the chat box | "Typed text is never treated as approval", nothing runs |
+| Chat: `How do we fail back to the primary data center?` | With a key: "Not covered by the approved sources". Without a key it shows search passages, if any, instead |
 
-Sequencing, approvals, timing, RTO/RPO, the report and runbook validation are plain Python.
+### D. AI features (needs a key)
+- Chat: `What happens if DNS propagation times out?` **Expected:** an answer citing
+  `DR-FIN-001 v3.2 section 6.2`. Wording varies.
+- **DR / Backup Portal** tab, bottom: **Interpret and check gaps** on the pre-filled sample
+  ([sample_data/sample_inputs/runbook_notes.txt](sample_data/sample_inputs/runbook_notes.txt)). **Expected:**
+  5 draft steps; the scheduler step shows missing owner and rollback.
+- Foundry endpoint, in a second PowerShell window:
+  ```powershell
+  Invoke-RestMethod -Method Post -Uri http://localhost:8088/responses -ContentType application/json -Body '{"input":"In what order does rollback run? Cite the source."}' | ConvertTo-Json -Depth 8
+  ```
+  **Expected:** `"status": "completed"` and an answer that cites an approved source.
 
-## Where this differs from the source documents
-
-| Topic | Choice made here |
-|---|---|
-| Replication lag limit (guidelines say 10s, baseline example shows 420s as healthy) | Set per scenario (`lag_threshold_seconds`, 10s). RPO age is checked separately |
-| Rollback (guidelines: automatic; baseline: approved) | Starts automatically, each step needs its own approval |
-| Sample rollback token `ROLLBACK-APPV-<step>-APPROVED` | Replaced by an HMAC-signed token; the fixed string is rejected |
-| Search (baseline: AI Search) | Local SQLite FTS5 with BM25, as the guidelines recommend |
-| UI evaluation and token figures in the first mock-up | Removed. Only measured values are shown |
-
-## Known limitations
-
-- **Approver identity is typed, not authenticated.** The server only listens on localhost and refuses
-  cross-site requests. Real use needs sign-in and roles.
-- **One signing key, one process.** Both agents run together, so the Operator could in principle sign tokens.
-  Separating them needs asymmetric signatures.
-- **Event log:** edits and removals in the middle are detected. Deleting the newest events is only detectable by
-  comparing with the chain head printed in an earlier report.
-- **Model quality is only smoke-tested.** One run of a small team-written set
-  ([results](docs/evidence/MODEL_EVALUATION.md)). Prompt, search and scoring were improved after failures on
-  those same questions, so it is not a held-out score.
-- **Failback questions are answered by a code rule.** The model kept offering rollback steps as failback.
-- **Runbook review** accepts vague owners such as "someone from the network side" as an owner.
-- **`/responses` input** goes to the model as typed. Tool results are masked, and chat in the UI is masked first.
-- **Azure deployment is untested** and not required. Only the local `azd ai agent run` was tested.
-- **Elapsed time** is real time (including approval waits) plus the simulated durations in the scenario file.
-- **Failback** is not simulated.
-- `knowledge/runbooks` contains a **fake** password, there to demonstrate masking. A secret scanner may flag it.
-
-## Build the submission zip
-
+### E. Automated tests
+After `.\run.bat` has created `.venv` (no key needed):
 ```powershell
-python scripts/package.py       # dist/Team31_UseCase22_Final.zip; refuses if it finds a secret
+.\.venv\Scripts\python.exe -m pytest -q
 ```
+**Expected:** `98 passed`. Optional: `.\.venv\Scripts\python.exe scripts\evaluate.py` rewrites `docs/evidence/`;
+`scripts\evaluate_model.py` scores the real model (needs a key). Saved results:
+[safety tests](docs/evidence/SAFETY_TESTS.md), [evaluation](docs/evidence/EVALUATION.md),
+[real model](docs/evidence/MODEL_EVALUATION.md).
 
-It includes only the project folders. `.env`, `data/` (signing key and drill database) and `.venv` stay out.
-Upload the zip, not the working folder.
+## 9. Known Limitations
 
-All data in this project is synthetic. A model call times out after 45 seconds, replies are capped at 900 tokens, API response storage is switched
-off (`store: false`), and one drill is limited to
-60 model calls (the `/responses` endpoint is limited per run, not per drill).
-
-## Layout
-
-```
-main.py            start the server
-drill/             coordinator, operator, agents, insights, security, store, knowledge, report, web
-knowledge/         runbooks (JSON) and reference documents (Markdown)
-scenarios/         deterministic scenario fixtures
-web/               browser UI
-tests/             guardrail, scenario, agent and HTTP tests
-evals/, scripts/   retrieval question set and evaluation runner
-docs/              architecture, solution write-up, demo script, evidence
-```
-
-To add a scenario, create `scenarios/<name>.json` with `"extends": "nominal_success"`, an `expected_outcome` and
-only the results that differ. The tests pick it up automatically.
+- **Mocked:** every infrastructure check and action comes from files in `sample_data/scenarios/` or a condition a
+  person chose. Communications are recorded, never sent. Sign-off and approver names are typed.
+- **No sign-in or roles.** The server listens on localhost only and refuses cross-site requests.
+- **One signing key and process** for both agents; separating them needs asymmetric signatures.
+- **AI quality is only smoke-tested** with a small team-written set. Prompt, search and a scoring rule were
+  improved after failures on those questions, so it is not a held-out score.
+- **Failback** is not simulated. Failback questions are answered by a code rule because the model kept offering
+  rollback steps.
+- **Reference checks ignore meaning**, and citations grouped as "sections 7.1, 7.2" are not verified. The latest
+  real-model run scored 21/22; the miss was a correct answer cited in that grouped form.
+- **Runbook review** accepts vague owners such as "someone from the network side".
+- **Masking** covers common password and key formats only. `/responses` input reaches the model as typed.
+- **Event log:** edits are detected; removing the newest events is only detectable against an earlier report.
+- **No separate content moderation service.** Harmful requests rely on the prompt and model; tools cannot affect
+  real systems.
+- **Azure deployment is untested** and not required.
+- Elapsed time is real time (including approval waits) plus simulated durations.

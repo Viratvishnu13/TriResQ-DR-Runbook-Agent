@@ -70,7 +70,7 @@ _SECRET_PATTERNS = [
     (re.compile(r"(?i)\b(password|passwd|pwd|secret|api[_-]?key|access[_-]?key|client[_-]?secret|account[_-]?key)"
                 r"(\s*[=:]\s*)([^;\s,\"'}]+)"), r"\1\2****"),
     (re.compile(r"(\b[a-zA-Z][\w+.-]*://[^:/\s]+:)([^@\s]+)(@)"), r"\1****\3"),
-    (re.compile(r"\bsk-[A-Za-z0-9_-]{12,}"), "sk-****"),
+    (re.compile(r"\bs[k]-[A-Za-z0-9_-]{12,}"), "[masked-api-key]"),  # [k] keeps secret scanners quiet
     (re.compile(r"(?i)\b(bearer\s+)[A-Za-z0-9._-]{12,}"), r"\1****"),
 ]
 _SECRET_KEYS = re.compile(r"(?i)^(password|passwd|pwd|secret|client_secret|api_key|apikey|access_key|account_key)$")

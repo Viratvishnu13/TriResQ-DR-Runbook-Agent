@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T17:00:11.675915+00:00",
+  "generated_at": "2026-11-27T17:16:45.174112+00:00",
   "tests": {
     "total": 98,
     "passed": 98
@@ -284,6 +284,6 @@
       }
     ]
   },
-  "report_generation_ms": 58.9,
+  "report_generation_ms": 34.9,
   "model_evaluated": false
 }

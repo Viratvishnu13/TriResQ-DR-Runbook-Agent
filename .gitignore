@@ -1,8 +1,16 @@
 .env
 .venv/
+venv/
+env/
 data/
+dist/
+build/
+node_modules/
 __pycache__/
+*.pyc
 .pytest_cache/
 .remember/
+.vscode/
+.idea/
 *.log
-dist/
+*.tmp

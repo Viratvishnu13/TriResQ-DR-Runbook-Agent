@@ -26,7 +26,7 @@ def finish(c, d):
     raise AssertionError("never finished")
 
 
-@pytest.mark.parametrize("path", sorted((ROOT / "scenarios").glob("*.json")), ids=lambda p: p.stem)
+@pytest.mark.parametrize("path", sorted((ROOT / "sample_data" / "scenarios").glob("*.json")), ids=lambda p: p.stem)
 def test_every_scenario_reaches_its_declared_outcome(coord, path):
     d = begin(coord, path.stem)
     finish(coord, d)
@@ -191,7 +191,7 @@ def test_runbook_validation_flags_gaps_and_blocks_unapproved_runbooks(coord):
 def test_conflicting_approved_versions_are_flagged(tmp_path, clock):
     import shutil
     copy = tmp_path / "knowledge"
-    shutil.copytree(ROOT / "knowledge", copy)
+    shutil.copytree(ROOT / "sample_data" / "knowledge", copy)
     rb = json.loads((copy / "runbooks/DR-FIN-001_v3.2.json").read_text())
     rb["version"] = "3.3"
     (copy / "runbooks/DR-FIN-001_v3.3.json").write_text(json.dumps(rb))

@@ -4,7 +4,7 @@ import json
 import pytest
 from starlette.testclient import TestClient
 
-from conftest import begin, drive, kinds
+from conftest import FAKE_PASSWORD, begin, drive, kinds
 from drill import agents
 from drill.web import create_app
 
@@ -90,7 +90,7 @@ def test_http_full_drill_and_report(client):
     assert client.get(f"/api/drills/{d}/report").json()["overall_result"] == "Pass"
     md = client.get(f"/api/drills/{d}/report.md")
     assert md.headers["content-disposition"].startswith("attachment") and "## Executive summary" in md.text
-    assert "SimOnly-NotReal-123" not in md.text + client.get(f"/api/drills/{d}").text
+    assert FAKE_PASSWORD not in md.text + client.get(f"/api/drills/{d}").text
     assert client.get("/api/meta").status_code == 200 and client.get("/api/evaluation").status_code == 200
     assert client.get("/").status_code == 200 and client.get("/app.js").status_code == 200
 

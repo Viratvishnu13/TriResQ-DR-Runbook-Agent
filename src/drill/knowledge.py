@@ -38,7 +38,7 @@ class Knowledge:
         for block in re.split(r"(?m)^## ", body)[1:]:
             title, _, text = block.partition("\n")
             sections.append({"title": title.strip(), "text": text.strip()})
-        return {**meta, "sections": sections, "source_uri": f"knowledge/docs/{path.name}"}
+        return {**meta, "sections": sections, "source_uri": f"sample_data/knowledge/docs/{path.name}"}
 
     def _chunks(self):
         def chunk(doc, section, title, text):

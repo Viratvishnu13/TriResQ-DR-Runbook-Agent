@@ -6,6 +6,10 @@ With a key in .env, the two Agent Framework agents and the Foundry /responses en
 import argparse
 import logging
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))  # application code lives in src/
 
 import uvicorn
 from dotenv import load_dotenv

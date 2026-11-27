@@ -1,0 +1,6 @@
+Payroll DR notes (draft)
+1. The DB Lead checks that replication lag is under 10 seconds.
+2. Promote the standby payroll database. The DB Lead confirms it accepts writes. To undo, demote it back to standby.
+3. Someone from the network side moves DNS across when things look ready.
+4. Restart the payroll batch scheduler.
+5. Finance confirms a test payslip can be generated.

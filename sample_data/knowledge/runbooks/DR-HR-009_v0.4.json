@@ -8,7 +8,7 @@
   "owner": "",
   "effective_date": "2025-01-10",
   "last_reviewed": "2025-01-10",
-  "source_uri": "knowledge/runbooks/DR-HR-009_v0.4.json",
+  "source_uri": "sample_data/knowledge/runbooks/DR-HR-009_v0.4.json",
   "metrics": {
     "rto_definition": "From recovery authorization (drill start) to recorded business acceptance. Elapsed time = wall-clock time (including approval waits) plus fixture-simulated operation and backoff durations.",
     "rpo_definition": "Reference time (simulated outage, recorded at drill start) minus the timestamp of the selected recovery point.",

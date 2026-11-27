@@ -18,7 +18,7 @@ from .operator import STACK, FailoverOperator, validate_injection
 from .security import ApprovalSigner, digest, load_secret, mask
 from .store import Store
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]  # project root (this file is in src/drill)
 MAX_RETRIES = 3  # hard cap, whatever a runbook says
 TERMINAL = {"completed", "rolled_back", "cancelled", "escalated", "plan_rejected"}
 APPROVAL_WORDS = re.compile(r"\b(approve|approved|lgtm|looks good|continue|proceed|go ahead|authori[sz]e|yes|ok|okay)\b")
@@ -67,7 +67,8 @@ class Coordinator:
     name = "Drill Coordinator"
 
     def __init__(self, db_path=ROOT / "data" / "drill.db", secret=None, clock=utcnow,
-                 knowledge_dir=ROOT / "knowledge", scenarios_dir=ROOT / "scenarios", approval_ttl=900):
+                 knowledge_dir=ROOT / "sample_data" / "knowledge",
+                 scenarios_dir=ROOT / "sample_data" / "scenarios", approval_ttl=900):
         self.clock, self.approval_ttl = clock, approval_ttl
         self.store = Store(db_path)
         self.security = ApprovalSigner(secret or load_secret(self.store.path.parent / "approval.key"))

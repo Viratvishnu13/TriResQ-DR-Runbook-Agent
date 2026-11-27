@@ -42,13 +42,19 @@ with your tools and report the result exactly. State-changing tools require a si
 the approval workflow holds. Never invent, guess or construct a token. Report refusals verbatim."""
 
 
+def _real_value(name):
+    """Unset, blank and untouched .env.example placeholders all mean 'not configured'."""
+    value = (os.getenv(name) or "").strip()
+    return bool(value) and not value.lower().startswith("your_")
+
+
 def provider():
     """Which model access is configured, from environment variables only."""
     model = os.getenv("OPENAI_MODEL") or DEFAULT_MODEL
-    if os.getenv("AZURE_OPENAI_ENDPOINT") and os.getenv("AZURE_OPENAI_API_KEY"):
+    if _real_value("AZURE_OPENAI_ENDPOINT") and _real_value("AZURE_OPENAI_API_KEY"):
         return {"name": "Azure OpenAI", "model": model, "api_key": os.environ["AZURE_OPENAI_API_KEY"],
                 "azure_endpoint": os.environ["AZURE_OPENAI_ENDPOINT"]}
-    if os.getenv("OPENAI_API_KEY"):
+    if _real_value("OPENAI_API_KEY"):
         extra = {"base_url": os.environ["OPENAI_BASE_URL"]} if os.getenv("OPENAI_BASE_URL") else {}
         return {"name": "OpenAI", "model": model, "api_key": os.environ["OPENAI_API_KEY"], **extra}
     return None

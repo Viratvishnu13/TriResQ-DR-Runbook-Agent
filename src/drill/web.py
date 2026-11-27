@@ -163,7 +163,7 @@ def api_routes(coord):
 
     def static(name):
         async def serve(_):
-            return FileResponse(ROOT / "web" / name)
+            return FileResponse(ROOT / "src" / "web" / name)
         return Route("/" if name == "index.html" else f"/{name}", serve)
 
     return [

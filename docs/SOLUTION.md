@@ -8,7 +8,7 @@ report. Steps get missed and reporting is slow. The user is the drill coordinato
 
 ## Solution
 A guided, stateful, simulation-only drill with a Drill Coordinator and a connected Failover Operator. See the
-[README](../README.md) and [architecture](ARCHITECTURE.md).
+[README](../README.md) and [architecture](architecture.md).
 
 ## Where AI adds value
 Step briefings with a suggested next option, a post-drill analysis, grounded question answering by two Agent
@@ -33,7 +33,7 @@ We did not time a human running the same drill, so we make no claim about time s
   `update_dns`, `rollback_step`.
 - **Coordinator tools:** `get_drill_state`, `get_events`, `search_runbook`, `ask_failover_operator`.
 - **Retrieval:** SQLite FTS5 (BM25) with source IDs, versions and sections. **State:** SQLite.
-- **Data:** entirely synthetic. No real systems, people or credentials; the one password is fake.
+- **Data:** entirely synthetic. No real systems, people or credentials; no password or key of any kind ships (the masking test creates a fake one while it runs).
 - **Limits:** 4 tool-loop iterations and 8 tool calls per agent run, 45 s per model call, 60 model calls per
   drill, 3 retries per step.
 

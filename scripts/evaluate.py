@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(ROOT), str(ROOT / "tests")]
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "tests")]
 
 from conftest import begin  # noqa: E402
 from drill.coordinator import Coordinator  # noqa: E402

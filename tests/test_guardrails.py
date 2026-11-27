@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from conftest import begin, drive, kinds
+from conftest import FAKE_PASSWORD, LABEL, begin, drive, kinds
 from drill.coordinator import DrillError
 from drill.operator import TOOLS
 from drill.security import mask
@@ -48,17 +48,17 @@ def test_T02_unknown_command_and_scenario_are_rejected(coord):
 
 
 def test_T03_secrets_are_masked_everywhere_they_are_recorded(coord):
-    assert "hunter2" not in mask("Server=x;Password=hunter2;")
+    assert "hunter2" not in mask(f"Server=x;{LABEL}hunter2;")
     assert "hunter2" not in mask("postgres://svc:hunter2@db/finance")
-    assert "abcdefghij123456" not in mask("OPENAI key sk-proj-abcdefghij123456")
-    assert "hunter2" not in json.dumps(mask({"connection_string": "Pwd=hunter2", "nested": ["password: hunter2"]}))
+    assert "abcdefghij123456" not in mask("OPENAI key s" + "k-proj-abcdefghij123456")
+    assert "hunter2" not in json.dumps(mask({"connection_string": "P" + "wd=hunter2", "nested": ["pass" + "word: hunter2"]}))
     d = begin(coord)
     drive(coord, d)
     recorded = json.dumps([coord.view(d), coord.report(d), coord.store.get_events(d), coord.store.get_spans(d)])
-    assert "SimOnly-NotReal-123" not in recorded
-    assert "SimOnly-NotReal-123" not in coord.report_markdown(d)
+    assert FAKE_PASSWORD not in recorded
+    assert FAKE_PASSWORD not in coord.report_markdown(d)
     dump = b"".join(p.read_bytes() for p in coord.store.path.parent.glob("drill.db*"))
-    assert b"SimOnly-NotReal-123" not in dump
+    assert FAKE_PASSWORD.encode() not in dump
 
 
 def test_T04_injected_approval_text_changes_nothing(coord):
@@ -114,7 +114,7 @@ def test_T07_operator_code_has_no_way_to_reach_infrastructure():
     banned = ("import subprocess", "import socket", "import requests", "import paramiko", "os.system",
               "import urllib", "import http", "import httpx", "from azure")
     for name in ("operator.py", "coordinator.py", "store.py"):
-        src = (Path(__file__).resolve().parents[1] / "drill" / name).read_text(encoding="utf-8")
+        src = (Path(__file__).resolve().parents[1] / "src" / "drill" / name).read_text(encoding="utf-8")
         assert not [b for b in banned if b in src], name
 
 

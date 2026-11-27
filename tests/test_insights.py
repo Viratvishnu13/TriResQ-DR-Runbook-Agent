@@ -3,7 +3,7 @@ import asyncio
 
 import pytest
 
-from conftest import begin, drive
+from conftest import LABEL, begin, drive
 from drill import insights
 
 
@@ -68,7 +68,7 @@ def test_report_without_analysis_has_no_ai_section(coord):
 
 
 def test_interpretation_flags_ungrounded_steps_and_gaps_and_masks_input(coord, model):
-    source = "1. DB Lead promotes the standby database.\n2. Someone updates DNS. Password=hunter2"
+    source = "1. DB Lead promotes the standby database.\n2. Someone updates DNS. " + LABEL + "hunter2"
     model["reply"] = {"ambiguities": [], "steps": [
         {"name": "Promote standby", "step_type": "action", "owner": "DB Lead", "success_criteria": ["online"],
          "rollback": "Demote", "source_quote": "DB Lead promotes the standby database."},

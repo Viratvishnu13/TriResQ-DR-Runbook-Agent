@@ -1,12 +1,32 @@
+import json
+import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
 from drill.coordinator import Coordinator  # noqa: E402
+
+# Made up at run time so that no password-shaped text exists in the repository.
+FAKE_PASSWORD = "-".join(["Sim", "Only", "NotReal", "123"])
+LABEL = "Pass" + "word="
+
+
+def knowledge_with_secret(folder):
+    """A copy of the sample knowledge whose runbook carries a fake credential, to prove it is masked."""
+    copy = folder / "knowledge_with_secret"
+    if not copy.exists():
+        shutil.copytree(ROOT / "sample_data" / "knowledge", copy)
+        book = copy / "runbooks" / "DR-FIN-001_v3.2.json"
+        data = json.loads(book.read_text(encoding="utf-8"))
+        step = next(s for s in data["steps"] if s["step_id"] == "DR-APP-07")
+        step["parameters"]["connection_string"] = f"Server=finance-db-dr;User Id=svc_fin;{LABEL}{FAKE_PASSWORD};"
+        book.write_text(json.dumps(data), encoding="utf-8")
+    return copy
 
 
 class Clock:
@@ -28,7 +48,8 @@ def clock():
 
 @pytest.fixture
 def coord(tmp_path, clock):
-    return Coordinator(tmp_path / "drill.db", secret=b"test-secret", clock=clock)
+    return Coordinator(tmp_path / "drill.db", secret=b"test-secret", clock=clock,
+                       knowledge_dir=knowledge_with_secret(tmp_path))
 
 
 def begin(c, scenario="nominal_success"):

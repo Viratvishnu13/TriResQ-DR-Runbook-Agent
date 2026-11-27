@@ -8,7 +8,7 @@
   "owner": "DR Lead (Platform Resilience)",
   "effective_date": "2026-06-01",
   "last_reviewed": "2026-09-15",
-  "source_uri": "knowledge/runbooks/DR-FIN-001_v3.2.json",
+  "source_uri": "sample_data/knowledge/runbooks/DR-FIN-001_v3.2.json",
   "priority": "Tier 1",
   "primary_site": "Primary Data Center",
   "recovery_site": "Secondary Data Center",
@@ -357,8 +357,7 @@
       ],
       "tool": "repoint_application",
       "parameters": {
-        "config": "finance-app-dr",
-        "connection_string": "Server=finance-db-dr;Database=Finance;User Id=svc_fin;Password=SimOnly-NotReal-123;"
+        "config": "finance-app-dr"
       },
       "approval_required": true,
       "success_criteria": [
