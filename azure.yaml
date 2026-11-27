@@ -1,0 +1,24 @@
+# Local-first Foundry manifest in the format given by the hackathon participant guide.
+# Tested with `azd ai agent run` (local only). Do not run `azd provision` or `azd deploy`.
+# `python main.py` does not depend on this file.
+name: dr-runbook-agent
+infra:
+  provider: microsoft.foundry
+services:
+  dr-runbook-agent:
+    name: dr-runbook-agent
+    host: azure.ai.agent
+    kind: hosted
+    language: python
+    project: ./
+    codeConfiguration:
+      runtime: python_3_13
+      entryPoint: main.py
+      dependencyResolution: remote_build
+    container:
+      resources:
+        cpu: "0.5"
+        memory: 1Gi
+    protocols:
+      - protocol: responses
+        version: 2.0.0

@@ -1,0 +1,23 @@
+{
+  "scenario_id": "db_failover_transient",
+  "extends": "nominal_success",
+  "title": "Database failover fails once, then succeeds",
+  "description": "A transient failure. The retry needs a fresh approval.",
+  "expected_outcome": "Pass with deviations",
+  "actions": {
+    "failover_database": {
+      "attempts": [
+        {
+          "result": "failed",
+          "failure_class": "transient_failure",
+          "details": "Simulated transient promotion error.",
+          "duration_seconds": 40
+        },
+        {
+          "result": "success",
+          "duration_seconds": 52
+        }
+      ]
+    }
+  }
+}

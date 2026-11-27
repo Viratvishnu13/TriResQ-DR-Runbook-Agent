@@ -1,0 +1,61 @@
+{
+  "scenario_id": "nominal_success",
+  "title": "Nominal success - primary site outage",
+  "description": "Simulated primary-site outage. Every check passes and every action succeeds.",
+  "simulation": true,
+  "application": "FINANCE-PROD",
+  "expected_outcome": "Pass",
+  "lag_threshold_seconds": 10,
+  "initial_state": {
+    "primary_site": "unavailable",
+    "dr_site": "ready",
+    "storage": "ready",
+    "database": "standby",
+    "application": "pointing_to_primary",
+    "dns": "primary"
+  },
+  "checks": {
+    "check_replication": {
+      "result": "healthy",
+      "lag_seconds": 4.2,
+      "recovery_point_age_seconds": 600,
+      "duration_seconds": 15
+    },
+    "check_health:storage": {
+      "result": "healthy",
+      "duration_seconds": 12
+    },
+    "check_health:compute": {
+      "result": "healthy",
+      "duration_seconds": 12
+    },
+    "check_health:database": {
+      "result": "healthy",
+      "duration_seconds": 12
+    },
+    "check_health:application": {
+      "result": "healthy",
+      "duration_seconds": 12
+    }
+  },
+  "actions": {
+    "failover_database": {
+      "result": "success",
+      "duration_seconds": 48
+    },
+    "repoint_application": {
+      "result": "success",
+      "duration_seconds": 35
+    },
+    "update_dns": {
+      "result": "success",
+      "duration_seconds": 20
+    }
+  },
+  "rollbacks": {
+    "default": {
+      "result": "success",
+      "duration_seconds": 30
+    }
+  }
+}

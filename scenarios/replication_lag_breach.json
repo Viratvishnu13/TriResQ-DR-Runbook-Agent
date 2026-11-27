@@ -1,0 +1,14 @@
+{
+  "scenario_id": "replication_lag_breach",
+  "extends": "nominal_success",
+  "title": "Replication lag beyond threshold",
+  "description": "Lag stays at 420s, far above the 10s threshold. Dependent actions stay blocked.",
+  "expected_outcome": "Incomplete",
+  "checks": {
+    "check_replication": {
+      "result": "lagging",
+      "lag_seconds": 420,
+      "failure_class": "transient_failure"
+    }
+  }
+}

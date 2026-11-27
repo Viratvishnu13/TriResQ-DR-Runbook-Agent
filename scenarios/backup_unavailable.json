@@ -1,0 +1,15 @@
+{
+  "scenario_id": "backup_unavailable",
+  "extends": "nominal_success",
+  "title": "Recovery point unavailable",
+  "description": "No usable recovery point can be confirmed, so RPO is not measured and recovery is blocked.",
+  "expected_outcome": "Incomplete",
+  "checks": {
+    "check_replication": {
+      "result": "recovery_point_unavailable",
+      "lag_seconds": null,
+      "recovery_point_age_seconds": null,
+      "failure_class": "recovery_point_missing"
+    }
+  }
+}

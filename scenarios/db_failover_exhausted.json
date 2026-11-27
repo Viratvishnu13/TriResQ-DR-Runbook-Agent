@@ -1,0 +1,15 @@
+{
+  "scenario_id": "db_failover_exhausted",
+  "extends": "nominal_success",
+  "title": "Database failover retries exhausted",
+  "description": "Failover keeps failing until the retry limit is reached.",
+  "expected_outcome": "Incomplete",
+  "actions": {
+    "failover_database": {
+      "result": "failed",
+      "failure_class": "transient_failure",
+      "details": "Simulated promotion error persists.",
+      "duration_seconds": 40
+    }
+  }
+}

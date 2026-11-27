@@ -1,0 +1,24 @@
+{
+  "scenario_id": "rollback_failure",
+  "extends": "nominal_success",
+  "title": "Rollback itself fails",
+  "description": "DNS times out and the application rollback then fails, forcing escalation.",
+  "expected_outcome": "Fail",
+  "actions": {
+    "update_dns": {
+      "result": "timed_out",
+      "failure_class": "propagation_timeout",
+      "state_effect": "partial",
+      "details": "Simulated DNS propagation timed out.",
+      "duration_seconds": 120
+    }
+  },
+  "rollbacks": {
+    "DR-APP-07": {
+      "result": "failed",
+      "failure_class": "rollback_error",
+      "details": "Simulated rollback failure.",
+      "duration_seconds": 40
+    }
+  }
+}

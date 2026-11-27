@@ -1,0 +1,581 @@
+{
+  "document_id": "DR-FIN-001",
+  "version": "3.2",
+  "title": "Finance Production - Primary Site Outage DR Runbook",
+  "document_type": "runbook",
+  "application": "FINANCE-PROD",
+  "approval_status": "approved",
+  "owner": "DR Lead (Platform Resilience)",
+  "effective_date": "2026-06-01",
+  "last_reviewed": "2026-09-15",
+  "source_uri": "knowledge/runbooks/DR-FIN-001_v3.2.json",
+  "priority": "Tier 1",
+  "primary_site": "Primary Data Center",
+  "recovery_site": "Secondary Data Center",
+  "metrics": {
+    "rto_definition": "From recovery authorization (drill start) to recorded business acceptance. Elapsed time = wall-clock time (including approval waits) plus fixture-simulated operation and backoff durations.",
+    "rpo_definition": "Reference time (simulated outage, recorded at drill start) minus the timestamp of the selected recovery point.",
+    "rto_target_seconds": 14400,
+    "rpo_target_seconds": 1800,
+    "tiers": [
+      {
+        "tier": "storage",
+        "label": "Storage",
+        "target_seconds": 1800,
+        "ready_step": "DR-STOR-03"
+      },
+      {
+        "tier": "infrastructure",
+        "label": "Infrastructure",
+        "target_seconds": 3600,
+        "ready_step": "DR-INFRA-04"
+      },
+      {
+        "tier": "database",
+        "label": "Database",
+        "target_seconds": 7200,
+        "ready_step": "DR-DB-06"
+      },
+      {
+        "tier": "application",
+        "label": "Application",
+        "target_seconds": 10800,
+        "ready_step": "DR-APP-09"
+      },
+      {
+        "tier": "business",
+        "label": "Business service",
+        "target_seconds": 14400,
+        "ready_step": "DR-BIZ-10"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "step_id": "DR-KICKOFF-01",
+      "sequence": 1,
+      "name": "Record drill kickoff communication",
+      "description": "Draft and record the kickoff notice on the simulated bridge. Nothing is sent.",
+      "step_type": "communication",
+      "owner": "Incident Management",
+      "tier": "governance",
+      "mandatory": true,
+      "dependencies": [],
+      "prerequisites": [
+        "Drill authorization confirmed"
+      ],
+      "tool": null,
+      "parameters": {
+        "template": "Drill kickoff"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Kickoff notice recorded"
+      ],
+      "expected_result": "Kickoff notice recorded in the drill log",
+      "risks": "Participants may mistake the drill for a real incident.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 1,
+        "retry_on": [],
+        "backoff_seconds": []
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "governance_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "3.1",
+        "citation": "DR-FIN-001 v3.2 section 3.1",
+        "text": "Before any recovery activity, record the kickoff notice using the Drill kickoff template. The drill must be announced as a SIMULATION."
+      }
+    },
+    {
+      "step_id": "DR-REPL-02",
+      "sequence": 2,
+      "name": "Verify replication health and recovery point",
+      "description": "Read-only check of replication status, lag and latest recovery point.",
+      "step_type": "check",
+      "owner": "DB On-call",
+      "tier": "storage",
+      "mandatory": true,
+      "dependencies": [
+        "DR-KICKOFF-01"
+      ],
+      "prerequisites": [
+        "Replica endpoints resolvable",
+        "On-call engineer on bridge"
+      ],
+      "tool": "check_replication",
+      "parameters": {
+        "replication_group": "finance-rg"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Replication status is healthy",
+        "Lag is within the scenario lag threshold",
+        "Recovery point age is within RPO"
+      ],
+      "expected_result": "Replication healthy and RPO satisfied",
+      "risks": "Failing over with lag loses committed transactions.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 3,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30,
+          60
+        ]
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "storage_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "4.1",
+        "citation": "DR-FIN-001 v3.2 section 4.1",
+        "text": "Confirm replication group finance-rg is healthy, replication lag is within the lag threshold, and the latest recovery point is within the 30 minute RPO. Do not proceed if either test fails. Replication may be re-checked after a wait while it catches up."
+      }
+    },
+    {
+      "step_id": "DR-STOR-03",
+      "sequence": 3,
+      "name": "Validate DR storage readiness",
+      "description": "Verify replicated volumes at DR are available.",
+      "step_type": "check",
+      "owner": "Backup & Storage",
+      "tier": "storage",
+      "mandatory": true,
+      "dependencies": [
+        "DR-REPL-02"
+      ],
+      "prerequisites": [
+        "Replication verified"
+      ],
+      "tool": "check_health",
+      "parameters": {
+        "component": "storage"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Storage reports healthy"
+      ],
+      "expected_result": "DR volumes healthy",
+      "risks": "Database cannot start on missing or degraded volumes.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "storage_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "4.2",
+        "citation": "DR-FIN-001 v3.2 section 4.2",
+        "text": "Verify the Finance data volumes are present at the secondary data center, healthy, and have capacity headroom."
+      }
+    },
+    {
+      "step_id": "DR-INFRA-04",
+      "sequence": 4,
+      "name": "Validate DR compute readiness",
+      "description": "Verify the recovery hosts for the Finance database and application are ready.",
+      "step_type": "check",
+      "owner": "Compute Platform",
+      "tier": "infrastructure",
+      "mandatory": true,
+      "dependencies": [
+        "DR-STOR-03"
+      ],
+      "prerequisites": [
+        "DR storage validated"
+      ],
+      "tool": "check_health",
+      "parameters": {
+        "component": "compute"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Compute reports healthy"
+      ],
+      "expected_result": "Recovery hosts healthy",
+      "risks": "No capacity to run the recovered service.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "infrastructure_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "4.3",
+        "citation": "DR-FIN-001 v3.2 section 4.3",
+        "text": "Confirm the Finance DB VM and application hosts at the secondary data center are powered on, healthy and reachable."
+      }
+    },
+    {
+      "step_id": "DR-DB-05",
+      "sequence": 5,
+      "name": "Fail over Finance database to DR (SIMULATED)",
+      "description": "Promote the standby database at the secondary data center.",
+      "step_type": "action",
+      "owner": "DB Lead",
+      "tier": "database",
+      "mandatory": true,
+      "dependencies": [
+        "DR-INFRA-04"
+      ],
+      "prerequisites": [
+        "Replica caught up",
+        "Change freeze in effect",
+        "Compute validated"
+      ],
+      "tool": "failover_database",
+      "parameters": {
+        "group": "finance-db"
+      },
+      "approval_required": true,
+      "success_criteria": [
+        "Standby promoted and online at DR"
+      ],
+      "expected_result": "Database online at DR",
+      "risks": "Data written after the last recovery point is not present at DR.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": {
+        "description": "Demote the DR database back to standby.",
+        "expected": "Database returns to standby",
+        "validation": "Simulated database state is standby",
+        "citation": "DR-FIN-001 v3.2 section 7.1",
+        "on_failure": "Escalate to DB Lead and DR Lead"
+      },
+      "evidence_required": true,
+      "rto_clock": "database_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "5.1",
+        "citation": "DR-FIN-001 v3.2 section 5.1",
+        "text": "With DB Lead awareness and coordinator approval, promote the standby of database group finance-db to primary at the secondary data center."
+      }
+    },
+    {
+      "step_id": "DR-DB-06",
+      "sequence": 6,
+      "name": "Validate database at DR",
+      "description": "Confirm the promoted database is consistent and accepting connections.",
+      "step_type": "validation",
+      "owner": "DB Lead",
+      "tier": "database",
+      "mandatory": true,
+      "dependencies": [
+        "DR-DB-05"
+      ],
+      "prerequisites": [
+        "Database failover completed"
+      ],
+      "tool": "check_health",
+      "parameters": {
+        "component": "database"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Database online at DR"
+      ],
+      "expected_result": "Database validated",
+      "risks": "Re-pointing to an unhealthy database causes an outage.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "rollback",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "database_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "5.2",
+        "citation": "DR-FIN-001 v3.2 section 5.2",
+        "text": "Confirm the promoted database is online, consistent and accepting connections before re-pointing the application."
+      }
+    },
+    {
+      "step_id": "DR-APP-07",
+      "sequence": 7,
+      "name": "Re-point Finance application to DR database (SIMULATED)",
+      "description": "Switch the application configuration to the DR database.",
+      "step_type": "action",
+      "owner": "App Lead",
+      "tier": "application",
+      "mandatory": true,
+      "dependencies": [
+        "DR-DB-06"
+      ],
+      "prerequisites": [
+        "Database validated at DR",
+        "Connection pool drained"
+      ],
+      "tool": "repoint_application",
+      "parameters": {
+        "config": "finance-app-dr",
+        "connection_string": "Server=finance-db-dr;Database=Finance;User Id=svc_fin;Password=SimOnly-NotReal-123;"
+      },
+      "approval_required": true,
+      "success_criteria": [
+        "Application configuration points to DR"
+      ],
+      "expected_result": "Application uses the DR database",
+      "risks": "Wrong profile can send writes to the wrong database.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          20
+        ]
+      },
+      "failure_branch": "rollback",
+      "rollback": {
+        "description": "Restore the primary application configuration profile.",
+        "expected": "Application points to primary",
+        "validation": "Simulated application state is pointing_to_primary",
+        "citation": "DR-FIN-001 v3.2 section 7.2",
+        "on_failure": "Escalate to App Lead and DR Lead"
+      },
+      "evidence_required": true,
+      "rto_clock": "application_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "6.1",
+        "citation": "DR-FIN-001 v3.2 section 6.1",
+        "text": "Apply configuration profile finance-app-dr so the Finance application connects to the DR database. Credentials are supplied by the platform secret store and must never appear in drill records."
+      }
+    },
+    {
+      "step_id": "DR-DNS-08",
+      "sequence": 8,
+      "name": "Shift Finance DNS to DR load balancer (SIMULATED)",
+      "description": "Update the simulated DNS record for user access.",
+      "step_type": "action",
+      "owner": "NetOps",
+      "tier": "application",
+      "mandatory": true,
+      "dependencies": [
+        "DR-APP-07"
+      ],
+      "prerequisites": [
+        "Application re-pointed",
+        "DNS TTL verified at 60s",
+        "NetOps on bridge"
+      ],
+      "tool": "update_dns",
+      "parameters": {
+        "record": "finance.example.internal",
+        "target": "dr-lb.example.internal"
+      },
+      "approval_required": true,
+      "success_criteria": [
+        "DNS record resolves to the DR load balancer"
+      ],
+      "expected_result": "User traffic directed to DR",
+      "risks": "Partial propagation splits users across sites.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 1,
+        "retry_on": [],
+        "backoff_seconds": []
+      },
+      "failure_branch": "rollback",
+      "rollback": {
+        "description": "Restore the DNS record to the primary load balancer.",
+        "expected": "DNS resolves to primary",
+        "validation": "Simulated DNS state is primary",
+        "citation": "DR-FIN-001 v3.2 section 7.3",
+        "on_failure": "Escalate to NetOps and DR Lead"
+      },
+      "evidence_required": true,
+      "rto_clock": "application_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "6.2",
+        "citation": "DR-FIN-001 v3.2 section 6.2",
+        "text": "Update record finance.example.internal to the DR load balancer. If propagation does not complete within the timeout, treat the change as failed and execute rollback in reverse order."
+      }
+    },
+    {
+      "step_id": "DR-APP-09",
+      "sequence": 9,
+      "name": "Validate Finance application end to end",
+      "description": "Synthetic login and critical transaction check.",
+      "step_type": "validation",
+      "owner": "SRE On-call",
+      "tier": "application",
+      "mandatory": true,
+      "dependencies": [
+        "DR-DNS-08"
+      ],
+      "prerequisites": [
+        "DNS shifted"
+      ],
+      "tool": "check_health",
+      "parameters": {
+        "component": "application"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Synthetic login and transaction succeed via DR"
+      ],
+      "expected_result": "Application validated at DR",
+      "risks": "Technical health alone does not prove users can work.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "rollback",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "application_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "6.3",
+        "citation": "DR-FIN-001 v3.2 section 6.3",
+        "text": "Run synthetic login and a critical Finance transaction through the DR endpoint."
+      }
+    },
+    {
+      "step_id": "DR-BIZ-10",
+      "sequence": 10,
+      "name": "Business owner acceptance",
+      "description": "Business owner confirms the critical Finance workflow works at DR.",
+      "step_type": "signoff",
+      "owner": "Finance Business Owner",
+      "tier": "business",
+      "mandatory": true,
+      "dependencies": [
+        "DR-APP-09"
+      ],
+      "prerequisites": [
+        "Application validated"
+      ],
+      "tool": null,
+      "parameters": {},
+      "approval_required": false,
+      "success_criteria": [
+        "Named business owner records acceptance"
+      ],
+      "expected_result": "Business acceptance recorded",
+      "risks": "Service declared recovered while the business cannot operate.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 1,
+        "retry_on": [],
+        "backoff_seconds": []
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "business_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "8.1",
+        "citation": "DR-FIN-001 v3.2 section 8.1",
+        "text": "The Finance business owner must confirm the critical month-end posting workflow before the drill can be declared successful."
+      }
+    },
+    {
+      "step_id": "DR-COMMS-11",
+      "sequence": 11,
+      "name": "Record drill completion communication",
+      "description": "Draft and record the completion notice. Nothing is sent.",
+      "step_type": "communication",
+      "owner": "Incident Management",
+      "tier": "governance",
+      "mandatory": false,
+      "dependencies": [
+        "DR-BIZ-10"
+      ],
+      "prerequisites": [
+        "Business acceptance recorded"
+      ],
+      "tool": null,
+      "parameters": {
+        "template": "Drill completion"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Completion notice recorded"
+      ],
+      "expected_result": "Completion notice recorded",
+      "risks": "",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 1,
+        "retry_on": [],
+        "backoff_seconds": []
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "governance_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "8.2",
+        "citation": "DR-FIN-001 v3.2 section 8.2",
+        "text": "Record the completion notice using the Drill completion template. This notice may be skipped if the coordinator records a reason."
+      }
+    }
+  ]
+}

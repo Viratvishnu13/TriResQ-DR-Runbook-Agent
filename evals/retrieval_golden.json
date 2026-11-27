@@ -1,0 +1,20 @@
+[
+ {"query": "what happens if DNS propagation times out", "expected": "DR-FIN-001 v3.2 section 6.2"},
+ {"query": "replication lag threshold before failover", "expected": "SOP-REP-002 v3.0 section 1"},
+ {"query": "order of recovery for storage compute database application", "expected": "DEP-FIN-001 v1.2 section 1"},
+ {"query": "in what order does rollback run", "expected": "DEP-FIN-001 v1.2 section 2"},
+ {"query": "no usable recovery point can be confirmed", "expected": "SOP-BKP-004 v1.6 section 2"},
+ {"query": "recovery time objective for tier 1 applications", "expected": "DR-POL-001 v2.0 section 1"},
+ {"query": "does saying looks good count as approval", "expected": "DR-POL-001 v2.0 section 2"},
+ {"query": "promote standby database to primary", "expected": "DR-FIN-001 v3.2 section 5.1"},
+ {"query": "demote DR database back to standby", "expected": "DR-FIN-001 v3.2 section 7.1"},
+ {"query": "restore primary application configuration profile", "expected": "DR-FIN-001 v3.2 section 7.2"},
+ {"query": "business owner acceptance month-end posting workflow", "expected": "DR-FIN-001 v3.2 section 8.1"},
+ {"query": "synthetic login and critical transaction check", "expected": "DR-FIN-001 v3.2 section 6.3"},
+ {"query": "escalation message template", "expected": "COMMS-DR-001 v1.1 section Escalation"},
+ {"query": "DNS TTL lesson from the previous drill", "expected": "RPT-FIN-2026-05 v1.0 section Lessons learned"},
+ {"query": "kubernetes helm chart upgrade", "expected": null},
+ {"query": "how do I request annual leave", "expected": null},
+ {"query": "pizza topping recommendation", "expected": null},
+ {"query": "reset my laptop wifi password", "expected": null}
+]

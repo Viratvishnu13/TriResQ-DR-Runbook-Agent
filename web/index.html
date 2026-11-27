@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DR Runbook Agent</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🛡️ DR Runbook Agent</h1>
+    <span class="tag">Backup &amp; Resilience · SIMULATION ONLY</span>
+    <span class="tag" id="modelTag">model: …</span>
+    <nav>
+      <button data-view="chat" class="active">Drill Chat</button>
+      <button data-view="portal">DR / Backup Portal</button>
+      <button data-view="otel">Observability</button>
+      <button data-view="eval">Evaluation</button>
+    </nav>
+  </header>
+
+  <div id="chatView" class="view active">
+    <div class="sidebar">
+      <button class="newchat" id="newChatBtn">+ New Drill</button>
+      <div class="chatlist" id="chatList"></div>
+    </div>
+    <div class="main">
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="composer">
+        <input id="composerInput" aria-label="Message" maxlength="1000" placeholder="Ask about the runbook, or type 'status', 'pause', 'resume', 'next'…">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+    <div class="timeline">
+      <h3>Drill Timeline</h3>
+      <div id="tl"></div>
+    </div>
+  </div>
+
+  <div id="portalView" class="view"></div>
+  <div id="otelView" class="view"></div>
+  <div id="evalView" class="view"></div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

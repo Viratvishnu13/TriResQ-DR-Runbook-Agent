@@ -1,0 +1,13 @@
+{
+  "scenario_id": "storage_not_ready",
+  "extends": "nominal_success",
+  "title": "DR storage not ready",
+  "description": "DR storage reports degraded volumes.",
+  "expected_outcome": "Incomplete",
+  "checks": {
+    "check_health:storage": {
+      "result": "degraded",
+      "failure_class": "hardware_fault"
+    }
+  }
+}

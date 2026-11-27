@@ -1,0 +1,16 @@
+{
+  "scenario_id": "dns_failure_rollback",
+  "extends": "nominal_success",
+  "title": "DNS timeout - reverse-order rollback",
+  "description": "DNS propagation times out part-way. Rollback starts automatically in reverse order; each rollback needs approval.",
+  "expected_outcome": "Fail",
+  "actions": {
+    "update_dns": {
+      "result": "timed_out",
+      "failure_class": "propagation_timeout",
+      "state_effect": "partial",
+      "details": "Simulated DNS propagation timed out; record is partially propagated.",
+      "duration_seconds": 120
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "scenario_id": "app_repoint_failure",
+  "extends": "nominal_success",
+  "title": "Application re-point failure - rollback",
+  "description": "Re-point fails after the database moved, so the database is rolled back.",
+  "expected_outcome": "Fail",
+  "actions": {
+    "repoint_application": {
+      "result": "failed",
+      "failure_class": "config_error",
+      "details": "Simulated configuration validation error.",
+      "duration_seconds": 40
+    }
+  }
+}

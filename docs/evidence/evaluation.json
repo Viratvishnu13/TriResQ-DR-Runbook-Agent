@@ -1,0 +1,289 @@
+{
+  "generated_at": "2026-11-27T17:00:11.675915+00:00",
+  "tests": {
+    "total": 98,
+    "passed": 98
+  },
+  "guardrails": [
+    {
+      "id": "T-01",
+      "dimension": "Normal use",
+      "total": 1,
+      "passed": 1,
+      "result": "PASS"
+    },
+    {
+      "id": "T-02",
+      "dimension": "Invalid input",
+      "total": 19,
+      "passed": 19,
+      "result": "PASS"
+    },
+    {
+      "id": "T-03",
+      "dimension": "Data protection",
+      "total": 1,
+      "passed": 1,
+      "result": "PASS"
+    },
+    {
+      "id": "T-04",
+      "dimension": "Prompt injection",
+      "total": 9,
+      "passed": 9,
+      "result": "PASS"
+    },
+    {
+      "id": "T-05",
+      "dimension": "Access control",
+      "total": 1,
+      "passed": 1,
+      "result": "PASS"
+    },
+    {
+      "id": "T-06",
+      "dimension": "Hallucination",
+      "total": 4,
+      "passed": 4,
+      "result": "PASS"
+    },
+    {
+      "id": "T-07",
+      "dimension": "Content safety",
+      "total": 5,
+      "passed": 5,
+      "result": "PASS"
+    },
+    {
+      "id": "T-08",
+      "dimension": "Failure handling",
+      "total": 2,
+      "passed": 2,
+      "result": "PASS"
+    },
+    {
+      "id": "T-09",
+      "dimension": "Cost and recursion",
+      "total": 4,
+      "passed": 4,
+      "result": "PASS"
+    },
+    {
+      "id": "T-10",
+      "dimension": "Human approval",
+      "total": 4,
+      "passed": 4,
+      "result": "PASS"
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "app_repoint_failure",
+      "expected": "Fail",
+      "actual": "Fail",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "backup_unavailable",
+      "expected": "Incomplete",
+      "actual": "Incomplete",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "db_failover_exhausted",
+      "expected": "Incomplete",
+      "actual": "Incomplete",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "db_failover_transient",
+      "expected": "Pass with deviations",
+      "actual": "Pass with deviations",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "dns_failure_rollback",
+      "expected": "Fail",
+      "actual": "Fail",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "nominal_success",
+      "expected": "Pass",
+      "actual": "Pass",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "replication_catchup",
+      "expected": "Pass with deviations",
+      "actual": "Pass with deviations",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "replication_lag_breach",
+      "expected": "Incomplete",
+      "actual": "Incomplete",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "rollback_failure",
+      "expected": "Fail",
+      "actual": "Fail",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "storage_not_ready",
+      "expected": "Incomplete",
+      "actual": "Incomplete",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    },
+    {
+      "scenario_id": "uncertain_action_outcome",
+      "expected": "Pass with deviations",
+      "actual": "Pass with deviations",
+      "match": true,
+      "unapproved_actions": 0,
+      "log_valid": true
+    }
+  ],
+  "retrieval": {
+    "answerable": 14,
+    "out_of_scope": 4,
+    "hit_at_1": 1.0,
+    "hit_at_3": 1.0,
+    "mrr": 1.0,
+    "refusal_accuracy": 1.0,
+    "cases": [
+      {
+        "query": "what happens if DNS propagation times out",
+        "expected": "DR-FIN-001 v3.2 section 6.2",
+        "top": "DR-FIN-001 v3.2 section 6.2",
+        "rank": 1
+      },
+      {
+        "query": "replication lag threshold before failover",
+        "expected": "SOP-REP-002 v3.0 section 1",
+        "top": "SOP-REP-002 v3.0 section 1",
+        "rank": 1
+      },
+      {
+        "query": "order of recovery for storage compute database application",
+        "expected": "DEP-FIN-001 v1.2 section 1",
+        "top": "DEP-FIN-001 v1.2 section 1",
+        "rank": 1
+      },
+      {
+        "query": "in what order does rollback run",
+        "expected": "DEP-FIN-001 v1.2 section 2",
+        "top": "DEP-FIN-001 v1.2 section 2",
+        "rank": 1
+      },
+      {
+        "query": "no usable recovery point can be confirmed",
+        "expected": "SOP-BKP-004 v1.6 section 2",
+        "top": "SOP-BKP-004 v1.6 section 2",
+        "rank": 1
+      },
+      {
+        "query": "recovery time objective for tier 1 applications",
+        "expected": "DR-POL-001 v2.0 section 1",
+        "top": "DR-POL-001 v2.0 section 1",
+        "rank": 1
+      },
+      {
+        "query": "does saying looks good count as approval",
+        "expected": "DR-POL-001 v2.0 section 2",
+        "top": "DR-POL-001 v2.0 section 2",
+        "rank": 1
+      },
+      {
+        "query": "promote standby database to primary",
+        "expected": "DR-FIN-001 v3.2 section 5.1",
+        "top": "DR-FIN-001 v3.2 section 5.1",
+        "rank": 1
+      },
+      {
+        "query": "demote DR database back to standby",
+        "expected": "DR-FIN-001 v3.2 section 7.1",
+        "top": "DR-FIN-001 v3.2 section 7.1",
+        "rank": 1
+      },
+      {
+        "query": "restore primary application configuration profile",
+        "expected": "DR-FIN-001 v3.2 section 7.2",
+        "top": "DR-FIN-001 v3.2 section 7.2",
+        "rank": 1
+      },
+      {
+        "query": "business owner acceptance month-end posting workflow",
+        "expected": "DR-FIN-001 v3.2 section 8.1",
+        "top": "DR-FIN-001 v3.2 section 8.1",
+        "rank": 1
+      },
+      {
+        "query": "synthetic login and critical transaction check",
+        "expected": "DR-FIN-001 v3.2 section 6.3",
+        "top": "DR-FIN-001 v3.2 section 6.3",
+        "rank": 1
+      },
+      {
+        "query": "escalation message template",
+        "expected": "COMMS-DR-001 v1.1 section Escalation",
+        "top": "COMMS-DR-001 v1.1 section Escalation",
+        "rank": 1
+      },
+      {
+        "query": "DNS TTL lesson from the previous drill",
+        "expected": "RPT-FIN-2026-05 v1.0 section Lessons learned",
+        "top": "RPT-FIN-2026-05 v1.0 section Lessons learned",
+        "rank": 1
+      },
+      {
+        "query": "kubernetes helm chart upgrade",
+        "expected": null,
+        "top": null,
+        "rank": null
+      },
+      {
+        "query": "how do I request annual leave",
+        "expected": null,
+        "top": null,
+        "rank": null
+      },
+      {
+        "query": "pizza topping recommendation",
+        "expected": null,
+        "top": null,
+        "rank": null
+      },
+      {
+        "query": "reset my laptop wifi password",
+        "expected": null,
+        "top": null,
+        "rank": null
+      }
+    ]
+  },
+  "report_generation_ms": 58.9,
+  "model_evaluated": false
+}

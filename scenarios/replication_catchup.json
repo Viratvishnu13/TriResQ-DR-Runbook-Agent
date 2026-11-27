@@ -1,0 +1,26 @@
+{
+  "scenario_id": "replication_catchup",
+  "extends": "nominal_success",
+  "title": "Replication catches up after a wait",
+  "description": "First check shows 45s lag; after a recorded wait the second check passes.",
+  "expected_outcome": "Pass with deviations",
+  "checks": {
+    "check_replication": {
+      "attempts": [
+        {
+          "result": "lagging",
+          "lag_seconds": 45,
+          "failure_class": "transient_failure",
+          "recovery_point_age_seconds": 600,
+          "duration_seconds": 15
+        },
+        {
+          "result": "healthy",
+          "lag_seconds": 3.1,
+          "recovery_point_age_seconds": 540,
+          "duration_seconds": 15
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "scenario_id": "uncertain_action_outcome",
+  "extends": "nominal_success",
+  "title": "Action outcome unknown - reconcile",
+  "description": "The re-point response is lost. The coordinator must inspect state before doing anything else.",
+  "expected_outcome": "Pass with deviations",
+  "actions": {
+    "repoint_application": {
+      "result": "unknown",
+      "failure_class": "response_lost",
+      "state_effect": "applied",
+      "details": "Simulated response lost; outcome unknown.",
+      "duration_seconds": 60
+    }
+  }
+}

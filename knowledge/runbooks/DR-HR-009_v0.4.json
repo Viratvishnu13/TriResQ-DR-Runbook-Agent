@@ -1,0 +1,146 @@
+{
+  "document_id": "DR-HR-009",
+  "version": "0.4",
+  "title": "HR Portal DR Runbook (draft)",
+  "document_type": "runbook",
+  "application": "HR-PORTAL",
+  "approval_status": "draft",
+  "owner": "",
+  "effective_date": "2025-01-10",
+  "last_reviewed": "2025-01-10",
+  "source_uri": "knowledge/runbooks/DR-HR-009_v0.4.json",
+  "metrics": {
+    "rto_definition": "From recovery authorization (drill start) to recorded business acceptance. Elapsed time = wall-clock time (including approval waits) plus fixture-simulated operation and backoff durations.",
+    "rpo_definition": "Reference time (simulated outage, recorded at drill start) minus the timestamp of the selected recovery point.",
+    "rto_target_seconds": 14400,
+    "rpo_target_seconds": 1800,
+    "tiers": [
+      {
+        "tier": "storage",
+        "label": "Storage",
+        "target_seconds": 1800,
+        "ready_step": "DR-STOR-03"
+      },
+      {
+        "tier": "infrastructure",
+        "label": "Infrastructure",
+        "target_seconds": 3600,
+        "ready_step": "DR-INFRA-04"
+      },
+      {
+        "tier": "database",
+        "label": "Database",
+        "target_seconds": 7200,
+        "ready_step": "DR-DB-06"
+      },
+      {
+        "tier": "application",
+        "label": "Application",
+        "target_seconds": 10800,
+        "ready_step": "DR-APP-09"
+      },
+      {
+        "tier": "business",
+        "label": "Business service",
+        "target_seconds": 14400,
+        "ready_step": "DR-BIZ-10"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "step_id": "DR-DB-05",
+      "sequence": 5,
+      "name": "Fail over Finance database to DR (SIMULATED)",
+      "description": "Promote the standby database at the secondary data center.",
+      "step_type": "action",
+      "owner": "",
+      "tier": "database",
+      "mandatory": true,
+      "dependencies": [
+        "DR-MISSING-99"
+      ],
+      "prerequisites": [
+        "Replica caught up",
+        "Change freeze in effect",
+        "Compute validated"
+      ],
+      "tool": "failover_database",
+      "parameters": {
+        "group": "finance-db"
+      },
+      "approval_required": false,
+      "success_criteria": [
+        "Standby promoted and online at DR"
+      ],
+      "expected_result": "Database online at DR",
+      "risks": "Data written after the last recovery point is not present at DR.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "pause_and_escalate",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "database_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "5.1",
+        "citation": "DR-FIN-001 v3.2 section 5.1",
+        "text": "With DB Lead awareness and coordinator approval, promote the standby of database group finance-db to primary at the secondary data center."
+      }
+    },
+    {
+      "step_id": "DR-DB-06",
+      "sequence": 6,
+      "name": "Validate database at DR",
+      "description": "Confirm the promoted database is consistent and accepting connections.",
+      "step_type": "validation",
+      "owner": "DB Lead",
+      "tier": "database",
+      "mandatory": true,
+      "dependencies": [
+        "DR-DB-05"
+      ],
+      "prerequisites": [
+        "Database failover completed"
+      ],
+      "tool": "restart_cluster",
+      "parameters": {
+        "component": "database"
+      },
+      "approval_required": false,
+      "success_criteria": [],
+      "expected_result": "Database validated",
+      "risks": "Re-pointing to an unhealthy database causes an outage.",
+      "timeout_seconds": 120,
+      "retry_policy": {
+        "max_attempts": 2,
+        "retry_on": [
+          "transient_failure"
+        ],
+        "backoff_seconds": [
+          30
+        ]
+      },
+      "failure_branch": "rollback",
+      "rollback": null,
+      "evidence_required": true,
+      "rto_clock": "database_recovery",
+      "source": {
+        "document_id": "DR-FIN-001",
+        "version": "3.2",
+        "section": "5.2",
+        "citation": "DR-FIN-001 v3.2 section 5.2",
+        "text": "Confirm the promoted database is online, consistent and accepting connections before re-pointing the application."
+      }
+    }
+  ]
+}
