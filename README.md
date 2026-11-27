@@ -63,6 +63,7 @@ Limits: 900 output tokens per reply, 4 tool-loop iterations and 8 tool calls per
 
 - Windows 10 or 11.
 - **Python:** 3.13 recommended. `run.bat` uses it if the `py -3.13` launcher finds it, otherwise `python`.
+  Tested with 3.13.15 and, from a fresh unzip, 3.14.7.
 - **Node.js:** not required. There are no npm packages.
 - **System packages:** none. SQLite with FTS5 ships with Python.
 - Internet access for the first dependency install, and for AI features.
